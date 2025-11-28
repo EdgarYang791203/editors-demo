@@ -1,15 +1,12 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  const isProd = mode === "production";
 
   return {
-    base: mode === "production" ? `/${env.VITE_PUBLIC_PATH || ""}/` : "/",
+    base: isProd ? "/editors-demo/" : "/",
     plugins: [svelte()],
-    define: {
-      __APP_ENV__: env.APP_ENV,
-    },
   };
 });
