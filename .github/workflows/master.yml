@@ -1,10 +1,9 @@
 name: Deploy static content to Pages
 
-# 設定觸發條件，當 push 到 master 分支時執行
 on:
   push:
     branches: ["master"]
-  workflow_dispatch: #支援手動觸發
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,24 +14,23 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
-# 定義執行的工作流程
 jobs:
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "npm"
+          cache: npm
 
-      # 安裝依賴
       - name: Install dependencies
         run: npm install
         env:
@@ -43,17 +41,14 @@ jobs:
         env:
           VITE_PUBLIC_PATH: ${{ secrets.VITE_PUBLIC_PATH }}
 
-      # 配置 Pages
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
-      # 上傳 Artifact
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: "./dist"
+          path: ./dist
 
-      # 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
