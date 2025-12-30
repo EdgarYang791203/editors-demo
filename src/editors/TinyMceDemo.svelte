@@ -18,10 +18,19 @@
       target: textareaElem,
       // 或者 selector: `#${editorId}`,
       menubar: false,
+      content_style: `
+        a { color: #0093C1; text-decoration: inherit; font-weight: 700; }
+        a[data-mce-selected],
+        a[data-mce-selected="inline-boundary"] {
+          background-color: transparent !important;
+        }
+      `,
+      // 只保留「免費/開源」常用插件，避免 premium plugin not enabled 的警告。
       plugins: [
         "anchor",
         "autolink",
         "charmap",
+        "code",
         "codesample",
         "emoticons",
         "link",
@@ -31,58 +40,47 @@
         "table",
         "visualblocks",
         "wordcount",
-        "checklist",
-        "mediaembed",
-        "casechange",
-        "formatpainter",
-        "pageembed",
-        "a11ychecker",
-        "tinymcespellchecker",
-        "permanentpen",
-        "powerpaste",
-        "advtable",
-        "advcode",
-        "advtemplate",
-        "ai",
-        "uploadcare",
-        "mentions",
-        "tinycomments",
-        "tableofcontents",
-        "footnotes",
-        "mergetags",
-        "autocorrect",
-        "typography",
-        "inlinecss",
-        "markdown",
-        "importword",
-        "exportword",
-        "exportpdf",
       ],
       toolbar:
-        "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat",
-      tinycomments_mode: "embedded",
-      tinycomments_author: "Author name",
-      mergetags_list: [
-        { value: "First.Name", title: "First Name" },
-        { value: "Email", title: "Email" },
-      ],
-      ai_request: (request: any, respondWith: any) =>
-        respondWith.string(() =>
-          Promise.reject("See docs to implement AI Assistant")
-        ),
-      uploadcare_public_key: import.meta.env.VITE_TINY_MCE_UPLOAD_KEY || "",
+        "undo redo | blocks | " +
+        "bold italic underline strikethrough forecolor backcolor | " +
+        "alignleft aligncenter alignright | " +
+        "bullist numlist | link unlink table | ",
       setup(editor: any) {
         console.log("TinyMCE ready", editor);
       },
     });
   });
 
+  function getHtmlWithInlineLinkStyle(content: string) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, "text/html");
+
+    doc.querySelectorAll("a").forEach((a) => {
+      const style = a.getAttribute("style") ?? "";
+
+      // 更精準地判斷是否已有 color: ...
+      const hasInlineColor = /(^|;)\s*color\s*:/.test(style);
+
+      if (!hasInlineColor) {
+        const extra = "color: #0093C1;"; // 若你只在乎顏色就好
+        const newStyle = style ? `${extra} ${style}` : extra;
+        a.setAttribute("style", newStyle);
+      }
+    });
+
+    return doc.body.innerHTML;
+  }
+
   function getContent2() {
     const tinymce = (window as any).tinymce;
     if (tinymce && tinymce.activeEditor) {
       const content = tinymce.activeEditor.getContent();
-      contentElem.innerHTML = content;
-      codeContentElem.textContent = content;
+      
+      const styledContent = getHtmlWithInlineLinkStyle(content);
+
+      if (contentElem) contentElem.innerHTML = styledContent;
+      if (codeContentElem) codeContentElem.textContent = styledContent;
     } else {
       console.error("tinymce or activeEditor not available");
     }
