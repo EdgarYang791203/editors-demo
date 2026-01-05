@@ -53,7 +53,7 @@
         "wordcount",
       ],
       toolbar:
-        "undo redo | blocks forecolor backcolor | " +
+        "undo redo | blocks forecolor | " +
         "bold italic underline strikethrough | " +
         "alignleft aligncenter alignright | " +
         "bullist numlist | link unlink table | ",
@@ -71,6 +71,8 @@
         "#00A59B",
         "Address",
       ],
+      color_cols: 4,
+      custom_colors: false,
       setup(editor: any) {
         console.log("TinyMCE ready", editor);
       },
