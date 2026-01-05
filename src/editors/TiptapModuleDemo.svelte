@@ -271,12 +271,13 @@
 
     <div
       bind:this={codeContentEl}
-      style="margin-bottom: 1rem; white-space: pre-wrap; font-family: monospace;"
+      style="margin-bottom: 1rem; white-space: pre-wrap; font-family: monospace; background-color: #f9f9f9; color: #222;"
     ></div>
 
     <div
       bind:this={contentEl}
-      style="padding: 1rem; border: 1px solid #ccc"
+      class="tiptap-content"
+      style="padding: 1rem; border: 1px solid #ccc; background-color: #f9f9f9; color: #222;"
     ></div>
   </div>
 </section>

@@ -7,8 +7,8 @@
 
 <main>
   <h1>文本編輯器</h1>
-  <QuillCdnDemo />
   <TiptapModuleDemo />
+  <QuillCdnDemo />
   <TinyMceDemo />
   <CKEditorCdnDemo />
 </main>
