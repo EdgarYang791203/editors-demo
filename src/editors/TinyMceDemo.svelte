@@ -28,6 +28,10 @@
         a[data-mce-selected="inline-boundary"] {
           background-color: transparent !important;
         }
+        table tbody tr:first-child td {
+          background-color: #494a57;
+          font-weight: 700;
+        }
       `,
       style_formats: [
         {
