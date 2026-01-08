@@ -1,0 +1,217 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
+
+.editor-content a {
+  color: #0093c1;
+  text-decoration: inherit;
+}
+.editor-content a[data-mce-selected],
+.editor-content a[data-mce-selected="inline-boundary"] {
+  background-color: transparent !important;
+}
+.editor-content table tbody tr:first-child td {
+  background-color: #494a57;
+}
+
+.noto-sans-tc {
+  font-family: "Noto Sans TC", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.editor-content p {
+  margin: 0;
+}
+
+.editor-content p.content-1,
+.editor-content .subheading,
+.editor-content .subheading-secondary {
+  font-size: 16px;
+  line-height: 1rem;
+}
+
+.editor-content p.content-2,
+.editor-content .subheading2,
+.editor-content .subheading-secondary2 {
+  font-size: 14px;
+  line-height: 0.875rem;
+}
+
+.editor-content .subheading,
+.editor-content .subheading2 {
+  font-weight: 700;
+}
+
+.editor-content .subheading-secondary,
+.editor-content .subheading-secondary2 {
+  font-weight: 500;
+}
+
+.editor-content .description {
+  font-size: 12px;
+  line-height: 0.75rem;
+}
+
+.editor-content .custom-d1 {
+  font-size: 40px;
+  line-height: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.editor-content .custom-d2 {
+  font-size: 36px;
+  line-height: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.editor-content .heading-h1 {
+  font-size: 32px;
+  line-height: 2rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+.editor-content .heading-h2 {
+  font-size: 28px;
+  line-height: 1.75rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+.editor-content .heading-h3 {
+  font-size: 24px;
+  line-height: 1.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+.editor-content .heading-h4 {
+  font-size: 20px;
+  line-height: 1.25rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+.editor-content .heading-h5 {
+  font-size: 18px;
+  line-height: 1.25rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+.editor-content .heading-h6 {
+  font-size: 18px;
+  line-height: 1.25rem;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+@media screen and (max-width: 768px) {
+  .editor-content .custom-d1 {
+    font-size: 32px;
+    line-height: 2rem;
+  }
+  .editor-content .custom-d2 {
+    font-size: 28px;
+    line-height: 1.75rem;
+  }
+  .editor-content .heading-h1 {
+    font-size: 24px;
+    line-height: 1.5rem;
+  }
+  .editor-content .heading-h2 {
+    font-size: 20px;
+    line-height: 1.25rem;
+  }
+  .editor-content .heading-h3,
+  .editor-content .heading-h4,
+  .editor-content .heading-h5,
+  .editor-content .heading-h6 {
+    font-size: 18px;
+    line-height: 1.125rem;
+  }
+}
+
+/*
+  English 覆寫建議
+*/
+.editor-content.lang-en p,
+.editor-content.lang-en .subheading,
+.editor-content.lang-en .subheading-secondary {
+  font-size: 15px;
+  line-height: 1.125rem;
+}
+
+.editor-content.lang-en p.content-2,
+.editor-content.lang-en .subheading2,
+.editor-content.lang-en .subheading-secondary2 {
+  font-size: 13px;
+  line-height: 1rem;
+}
+
+.link-primary {
+  color: #0093c1 !important;
+  text-decoration: inherit;
+}
+
+.link-primary:hover {
+  color: #00a59b !important;
+}
+
+.text-back-white {
+  color: #ffffff;
+}
+.text-back-black {
+  color: #0c0e1f;
+}
+.text-back-gray {
+  color: #494a57;
+}
+.text-memo {
+  color: #5e5f6b;
+}
+.text-primary-link {
+  color: #0093c1;
+}
+.text-address {
+  color: #00a59b;
+}
+
+.bg-back-white {
+  background-color: #ffffff;
+}
+.bg-back-black {
+  background-color: #0c0e1f;
+}
+.bg-back-gray {
+  background-color: #494a57;
+}
+.bg-memo {
+  background-color: #5e5f6b;
+}
+.bg-primary-link {
+  background-color: #0093c1;
+}
+.bg-address {
+  background-color: #00a59b;
+}
+
+.editor-content .text-align-left {
+  text-align: left;
+}
+
+.editor-content .text-align-center {
+  text-align: center;
+}
+
+.editor-content .text-align-right {
+  text-align: right;
+}
+
+.table-default {
+  border-collapse: collapse;
+  width: 100%;
+}

@@ -18,9 +18,26 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
     stripAllStyles: true,
   },
   {
+    match: [{ prop: "text-align", value: /^left\b/i }],
+    addClasses: ["text-align-left"],
+    stripMatchedProps: true,
+  },
+  {
+    match: [{ prop: "text-align", value: /^center\b/i }],
+    addClasses: ["text-align-center"],
+    stripMatchedProps: true,
+  },
+  {
+    match: [{ prop: "text-align", value: /^right\b/i }],
+    addClasses: ["text-align-right"],
+    stripMatchedProps: true,
+  },
+  {
     tag: ["COL", "COLGROUP"],
     addClasses: [],
-    preserveAllStyles: true,
+    // 讓表格欄寬（<col style="width: ...">）在 normalize 時也會被清掉
+    // 如果你需要「保留」欄寬來維持排版，把這行改回 preserveAllStyles: true
+    stripAllStyles: true,
   },
   {
     match: [
@@ -29,7 +46,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)/i,
       },
     ],
-    addClasses: ["text-edit-white"],
+    addClasses: ["text-back-white"],
     stripMatchedProps: true,
   },
   {
@@ -39,7 +56,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#0c0e1f|rgb\(\s*12\s*,\s*14\s*,\s*31\s*\)/i,
       },
     ],
-    addClasses: ["text-edit-black"],
+    addClasses: ["text-back-black"],
     stripMatchedProps: true,
   },
   {
@@ -49,7 +66,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#494a57|rgb\(\s*73\s*,\s*74\s*,\s*87\s*\)/i,
       },
     ],
-    addClasses: ["text-edit-gray"],
+    addClasses: ["text-back-gray"],
     stripMatchedProps: true,
   },
   {
@@ -89,7 +106,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)/i,
       },
     ],
-    addClasses: ["bg-edit-white"],
+    addClasses: ["bg-back-white"],
     stripMatchedProps: true,
   },
   {
@@ -99,7 +116,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#0c0e1f|rgb\(\s*12\s*,\s*14\s*,\s*31\s*\)/i,
       },
     ],
-    addClasses: ["bg-edit-black"],
+    addClasses: ["bg-back-black"],
     stripMatchedProps: true,
   },
   {
@@ -109,7 +126,7 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
         value: /#494a57|rgb\(\s*73\s*,\s*74\s*,\s*87\s*\)/i,
       },
     ],
-    addClasses: ["bg-edit-gray"],
+    addClasses: ["bg-back-gray"],
     stripMatchedProps: true,
   },
   {

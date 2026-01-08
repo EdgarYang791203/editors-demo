@@ -28,6 +28,7 @@
     "@tiptap/extension-list": "^3.11.0",
     "@tiptap/extension-text-style": "^3.11.0",
     "@tiptap/starter-kit": "^3.11.0",
+    "jodit": "^4.7.9",
     "lexical": "^0.38.2"
   }
 }

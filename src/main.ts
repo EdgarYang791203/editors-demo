@@ -1,10 +1,11 @@
-import { mount } from 'svelte'
-import './app.css'
-import './assets/tiptap.scss';
-import App from './App.svelte'
+import { mount } from "svelte";
+import "./app.css";
+// import "./assets/tiptap.scss";
+import "./assets/global-editor.css";
+import App from "./App.svelte";
 
 const app = mount(App, {
-  target: document.getElementById('app')!,
-})
+  target: document.getElementById("app")!,
+});
 
-export default app
+export default app;
