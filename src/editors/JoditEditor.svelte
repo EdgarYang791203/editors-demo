@@ -2,7 +2,6 @@
   import { onMount, onDestroy } from "svelte";
   import { Jodit } from "jodit";
   import "jodit/es5/jodit.min.css";
-  import "../assets/global-editor.css";
 
   type StyleKey =
     | "customD1"
@@ -151,20 +150,6 @@
     STYLE_DEFS.map((d) => [d.key, d])
   );
 
-  const CLASSNAMES_BY_GROUP: Record<StyleGroup, string[]> = STYLE_DEFS.reduce(
-    (acc, d) => {
-      acc[d.group].push(d.className);
-      return acc;
-    },
-    {
-      emphasis: [],
-      heading: [],
-      contentHeading: [],
-      secondaryContentHeading: [],
-      paragraphVariant: [],
-    } as Record<StyleGroup, string[]>
-  );
-
   const ALL_STYLE_CLASSNAMES = new Set(STYLE_DEFS.map((d) => d.className));
 
   function getClosestBlock(editor: any): HTMLElement | null {
@@ -189,7 +174,7 @@
     const startEl: Element | null =
       current.nodeType === Node.ELEMENT_NODE
         ? (current as unknown as Element)
-        : (current as any).parentElement ?? null;
+        : ((current as any).parentElement ?? null);
 
     if (!startEl) return null;
     if (!root.contains(startEl)) return null;
@@ -229,7 +214,9 @@
   function setExclusiveStyleClass(el: HTMLElement, className: string) {
     // Single dropdown => a single active style at a time.
     // Remove ALL known style classes (across all groups), but keep other classes.
-    const kept = Array.from(el.classList).filter((c) => !ALL_STYLE_CLASSNAMES.has(c));
+    const kept = Array.from(el.classList).filter(
+      (c) => !ALL_STYLE_CLASSNAMES.has(c)
+    );
     kept.push(className);
     el.className = Array.from(new Set(kept)).join(" ");
   }
@@ -251,22 +238,6 @@
     const def = STYLE_BY_KEY.get(key);
     if (!def) return;
 
-    const dbg = Boolean(debugLogStyleApply);
-    if (dbg) {
-      console.groupCollapsed(
-        `[JoditStyle] applyBlockStyle(${def.key}) -> <${def.tag} class=\"${def.className}\">`
-      );
-      try {
-        console.log("before: editor.value", editor?.value);
-        console.log(
-          "before: selection.current",
-          debugNodeSummary(editor?.s?.current?.() ?? editor?.selection?.current?.())
-        );
-      } catch {
-        // ignore
-      }
-    }
-
     // Jodit toolbar dropdown steals focus; caller should restore selection first.
     // Still do a best-effort focus here.
     editor?.focus?.();
@@ -279,91 +250,20 @@
       // ignore and fallback below
     }
 
-    if (dbg) {
-      try {
-        const root: HTMLElement | null =
-          editor?.container?.querySelector?.(".jodit-wysiwyg") ??
-          editor?.editor ??
-          null;
-        console.log("after formatBlock: selection.current", debugNodeSummary(editor?.s?.current?.() ?? editor?.selection?.current?.()));
-        console.log(
-          "after formatBlock: root.innerHTML",
-          root ? root.innerHTML : "<no root>"
-        );
-      } catch {
-        // ignore
-      }
-    }
-
     let block = getClosestBlock(editor);
-    if (!block) {
-      if (dbg) {
-        console.warn("getClosestBlock() returned null; class will not be set.");
-        console.groupEnd();
-      }
-      return;
-    }
-
-    if (dbg) {
-      console.log(
-        "closest block (pre-replace):",
-        debugNodeSummary(block),
-        "outerHTML:",
-        (block as HTMLElement).outerHTML
-      );
-    }
+    if (!block) return;
 
     // If formatBlock didn't change tag (or not supported), fallback to manual replace.
     block = replaceTag(editor, block, def.tag);
 
-    if (dbg) {
-      console.log(
-        "block after replaceTag:",
-        debugNodeSummary(block),
-        "outerHTML:",
-        (block as HTMLElement).outerHTML
-      );
-    }
-
     setExclusiveStyleClass(block, def.className);
-
-    if (dbg) {
-      console.log(
-        "block after setExclusiveStyleClass:",
-        debugNodeSummary(block),
-        "outerHTML:",
-        (block as HTMLElement).outerHTML
-      );
-    }
-
-    if (debugHoldSync) {
-      if (dbg) {
-        console.warn(
-          "debugHoldSync=true: skipping synchronizeValues() and change event; bind:value will NOT update."
-        );
-        console.groupEnd();
-      }
-      return;
-    }
 
     // Ensure changes propagate to textarea + bind:value.
     // Avoid setEditorValue here because it can re-run CleanHTML and strip attrs.
     editor?.synchronizeValues?.();
 
-    if (dbg) {
-      try {
-        console.log("after synchronizeValues: editor.value", editor?.value);
-      } catch {
-        // ignore
-      }
-    }
-
     const nextHtml = typeof editor?.value === "string" ? editor.value : "";
     editor?.events?.fire?.("change", nextHtml);
-
-    if (dbg) {
-      console.groupEnd();
-    }
   }
 
   function ensureStyleSelectControlRegistered() {
@@ -381,17 +281,36 @@
       return rawKey as StyleKey;
     };
 
-    // Register a dropdown list button in the toolbar.
+    // 在工具列中註冊一個下拉清單按鈕。
     controls.styleSelect = {
       name: "styleSelect",
       text: "選擇樣式",
       tooltip: "選擇樣式",
+      update: (editor: any, button: any) => {
+        try {
+          const block = getClosestBlock(editor);
+          let label = "選擇樣式";
+
+          if (block) {
+            const matched = STYLE_DEFS.find((d) =>
+              block.classList.contains(d.className)
+            );
+            if (matched) label = matched.title;
+          }
+
+          if (button?.state?.text !== label) {
+            button.state.text = label;
+          }
+        } catch {
+          // ignore
+        }
+      },
       list: Object.fromEntries(STYLE_DEFS.map((d) => [d.key, d.title])),
       exec: (editor: any, _current: any, btnOrOptions: any) => {
         const chosen = getChosenKey(btnOrOptions);
         if (!chosen) {
-          // Dropdown opening: snapshot selection so the next click can apply to the
-          // correct block (toolbar clicks usually clear selection).
+          // 下拉式選單開啟：快照選擇，以便下次點擊可以套用於
+          // 工具列點擊通常會清除選擇。
           try {
             (editor as any).__styleSelectSavedSelection =
               editor?.selection?.save?.() ?? editor?.s?.save?.();
@@ -406,7 +325,7 @@
         const chosen = getChosenKey(btnOrOptions);
         if (!chosen) return;
 
-        // Restore selection saved on dropdown open.
+        // 還原在下拉式選單開啟時儲存的選擇。
         const saved = (editor as any).__styleSelectSavedSelection;
         if (saved) {
           try {
@@ -424,19 +343,195 @@
         if (!def) return `<span>${title}</span>`;
         const tag = def.tag;
         const cls = def.className;
-        // Use .editor-content wrapper so preview can reuse the same scoped CSS.
+        // 使用 .editor-content scoped，以便預覽可以重複使用相同的作用域 CSS。
         return `<div class="editor-content"><${tag} class="${cls}">${title}</${tag}></div>`;
       },
     };
+  }
+
+  function stripBackgroundTabFromBrushPopup(popupRoot: unknown, editor: any) {
+    try {
+      const root = popupRoot as HTMLElement | null;
+      if (!root || typeof (root as any).querySelector !== "function") return;
+
+      const buttons = root.querySelector(
+        ".jodit-tabs__buttons"
+      ) as HTMLElement | null;
+      const wrapper = root.querySelector(
+        ".jodit-tabs__wrapper"
+      ) as HTMLElement | null;
+
+      if (!buttons || !wrapper) return;
+
+      const bgLabel =
+        (typeof editor?.i18n === "function" ? editor.i18n("Background") : "") ||
+        "Background";
+      const candidates = new Set([
+        "Background",
+        bgLabel,
+        "背景",
+        "底色",
+        "背景色",
+        "背景顏色",
+      ]);
+
+      const buttonEls = Array.from(buttons.children) as HTMLElement[];
+      const tabEls = Array.from(wrapper.children) as HTMLElement[];
+
+      const bgIndex = buttonEls.findIndex((el) => {
+        const txt = (el.textContent ?? "").trim();
+        if (!txt) return false;
+        for (const c of candidates) {
+          if (c && txt.includes(c)) return true;
+        }
+        return false;
+      });
+
+      if (bgIndex < 0) return;
+
+      buttonEls[bgIndex]?.remove();
+      tabEls[bgIndex]?.remove();
+
+      // Make the remaining tab/button fill the width.
+      const remainingBtn = buttons.firstElementChild as HTMLElement | null;
+      if (remainingBtn) remainingBtn.style.width = "100%";
+
+      // Ensure a tab is active.
+      const remainingTab = wrapper.firstElementChild as HTMLElement | null;
+      if (remainingTab) {
+        for (const t of Array.from(wrapper.children)) {
+          (t as HTMLElement).classList.remove("jodit-tab_active");
+        }
+        remainingTab.classList.add("jodit-tab_active");
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function makeTextOnlyBrushControl(baseBrush: any) {
+    return {
+      ...(baseBrush ?? {}),
+      popup: (editor: any, current: any, close: () => void, button: any) => {
+        const modules =
+          editor?.constructor?.modules ?? (Jodit as any)?.modules ?? null;
+        const ColorPickerWidget = modules?.ColorPickerWidget;
+        const TabsWidget = modules?.TabsWidget;
+        const Dom = modules?.Dom;
+
+        // If we can't access the widget modules, fallback to base popup,
+        // then strip the Background tab from the DOM.
+        if (!ColorPickerWidget) {
+          const popupRoot =
+            baseBrush?.popup?.(editor, current, close, button) ?? false;
+          stripBackgroundTabFromBrushPopup(popupRoot, editor);
+          return popupRoot;
+        }
+
+        let currentElement: HTMLElement | null = null;
+        let currentColor = "";
+
+        try {
+          if (current && current !== editor.editor && Dom?.isNode?.(current)) {
+            if (
+              Dom?.isElement?.(current) &&
+              editor?.s?.isCollapsed?.() &&
+              !Dom?.isTag?.(current, new Set(["br", "hr"]))
+            ) {
+              currentElement = current as HTMLElement;
+            }
+
+            Dom?.up?.(
+              current,
+              (node: any) => {
+                if (Dom?.isHTMLElement?.(node)) {
+                  const cssColor = window.getComputedStyle(node).color;
+                  if (cssColor) {
+                    currentColor = cssColor;
+                    return true;
+                  }
+                }
+                return false;
+              },
+              editor.editor
+            );
+          }
+        } catch {
+          // ignore
+        }
+
+        const initial =
+          (button as any)?.__textColor ??
+          (typeof currentColor === "string" ? currentColor : "");
+
+        const picker = ColorPickerWidget(
+          editor,
+          (value: string) => {
+            try {
+              if (!currentElement) {
+                editor.execCommand?.("forecolor", false, value);
+              } else {
+                currentElement.style.color = value;
+              }
+
+              // Persist last chosen text color for the main button action.
+              (button as any).__textColor = value;
+              if (button?.state?.icon) button.state.icon.fill = value;
+            } finally {
+              close();
+            }
+          },
+          initial
+        );
+
+        const tabName =
+          (typeof editor?.i18n === "function" ? editor.i18n("Text") : "") ||
+          "Text";
+
+        // Use the same tab UI as Jodit, but only expose the Text tab.
+        if (TabsWidget) {
+          return TabsWidget(editor, [{ name: tabName, content: picker }], null);
+        }
+
+        return picker;
+      },
+      exec: (editor: any, current: any, { button }: any) => {
+        const color = (button as any)?.__textColor;
+        if (!color) return false;
+
+        if (
+          current &&
+          current !== editor.editor &&
+          current.nodeType === Node.ELEMENT_NODE
+        ) {
+          (current as HTMLElement).style.color = color;
+          return;
+        }
+
+        editor.execCommand?.("forecolor", false, color);
+      },
+    };
+  }
+
+  function ensureTextOnlyBrushControlRegistered() {
+    const controls = (Jodit as any).defaultOptions?.controls;
+    if (!controls) return;
+
+    const baseBrush = controls.brush;
+    if (!baseBrush) return;
+
+    // Prevent double-patching.
+    if ((baseBrush as any).__textOnlyPatched) return;
+
+    const patched = makeTextOnlyBrushControl(baseBrush);
+    (patched as any).__textOnlyPatched = true;
+    controls.brush = patched;
   }
 
   // 外部可以用 bind:value 傳進來 / 取得內容
   export let value: string = "";
   // 外部可傳入 Jodit 設定（toolbar、顏色限制等）
   export let config: any = {};
-  // Debug helpers
-  export let debugLogStyleApply: boolean = false;
-  export let debugHoldSync: boolean = false;
 
   let textareaElem: HTMLTextAreaElement | null = null;
   let joditInstance: any = null;
@@ -460,6 +555,19 @@
 
     ensureStyleSelectControlRegistered();
 
+    // Make sure the brush control is text-color-only at the source.
+    // This avoids cases where toolbar resolves controls from defaultOptions.
+    ensureTextOnlyBrushControlRegistered();
+
+    const baseControls = (Jodit as any).defaultOptions?.controls ?? {};
+    const baseBrush = baseControls?.brush;
+    const textOnlyBrushControl = makeTextOnlyBrushControl(baseBrush);
+
+    const mergedControls = {
+      ...(config?.controls ?? {}),
+      brush: textOnlyBrushControl,
+    };
+
     joditInstance = new (Jodit as any)(textareaElem, {
       toolbarAdaptive: false,
       defaultMode: (Jodit as any).MODE_WYSIWYG,
@@ -474,7 +582,21 @@
         allowTags: false,
       },
       ...config,
+      controls: mergedControls,
     });
+
+    // Extra safety: block background color commands from any other entry.
+    try {
+      joditInstance?.events?.on?.("beforeCommand", (command: string) => {
+        const cmd = String(command || "").toLowerCase();
+        if (cmd === "background" || cmd === "backcolor") {
+          return false;
+        }
+        return;
+      });
+    } catch {
+      // ignore
+    }
 
     // 設定初始內容
     joditInstance.value = value || "";
@@ -482,9 +604,153 @@
     // Ensure our scoped CSS (.editor-content ...) actually matches inside Jodit.
     ensureEditorContentClassApplied(joditInstance);
 
+    const syncValueFromEditor = (reason: string) => {
+      try {
+        joditInstance?.synchronizeValues?.();
+      } catch {
+        // ignore
+      }
+      console.log(
+        `JoditEditor: syncValueFromEditor updating value`,
+        joditInstance.value
+      );
+      const nextHtml =
+        typeof joditInstance?.value === "string" ? joditInstance.value : "";
+      // Assigning the same value is a no-op for our `$:` sync guard.
+      value = nextHtml;
+    };
+
+    // Log text-align actions from the toolbar (left/center/right).
+    // Jodit justify plugin uses: justifyleft/justifycenter/justifyright/justifyfull
+    const ALIGN_COMMANDS = new Set([
+      "justifyleft",
+      "justifycenter",
+      "justifyright",
+      "justifyfull",
+      // Fallbacks if any custom button names leak through
+      "left",
+      "center",
+      "right",
+    ]);
+
+    // Toolbar clicks can steal focus and clear selection. Keep a recent selection snapshot
+    // so we can re-apply block-level operations reliably.
+    let lastSelectionSnapshot: any = null;
+    const saveSelectionSnapshot = () => {
+      try {
+        lastSelectionSnapshot =
+          joditInstance?.selection?.save?.() ?? joditInstance?.s?.save?.();
+      } catch {
+        // ignore
+      }
+    };
+
+    try {
+      // Track selection changes while editing.
+      joditInstance.events.on(
+        joditInstance.editor,
+        "mouseup keyup",
+        saveSelectionSnapshot
+      );
+    } catch {
+      // ignore
+    }
+
+    const restoreSelectionSnapshot = () => {
+      if (!lastSelectionSnapshot) return;
+      try {
+        joditInstance?.selection?.restore?.(lastSelectionSnapshot);
+      } catch {
+        // ignore
+      }
+    };
+
+    const applyTextAlignToClosestBlock = (
+      align: "left" | "center" | "right" | "justify"
+    ) => {
+      // Best-effort: restore selection, focus editor, then find a block and apply style.
+      restoreSelectionSnapshot();
+      try {
+        joditInstance?.s?.focus?.();
+      } catch {
+        // ignore
+      }
+
+      let block = getClosestBlock(joditInstance);
+      if (!block) {
+        // Ensure we have a block to apply alignment to.
+        try {
+          joditInstance?.execCommand?.("formatBlock", false, "p");
+        } catch {
+          // ignore
+        }
+        block = getClosestBlock(joditInstance);
+      }
+
+      if (block) {
+        block.style.textAlign = align;
+      }
+
+      // 持久化到 editor.value + bind:value。
+      syncValueFromEditor(`applyTextAlign:${align}`);
+
+      const nextHtml =
+        typeof joditInstance?.value === "string" ? joditInstance.value : "";
+      joditInstance?.events?.fire?.("change", nextHtml);
+
+      return false;
+    };
+
+    // Ensure the three toolbar buttons work even if the underlying browser command
+    // (document.execCommand) is a no-op.
+    const registerAlignCommand = (name: string, align: any) => {
+      try {
+        joditInstance?.registerCommand?.(name, () =>
+          applyTextAlignToClosestBlock(align)
+        );
+      } catch {
+        // ignore
+      }
+    };
+
+    registerAlignCommand("left", "left");
+    registerAlignCommand("center", "center");
+    registerAlignCommand("right", "right");
+    registerAlignCommand("justify", "justify");
+    // Common variants used by built-in controls
+    registerAlignCommand("justifyLeft", "left");
+    registerAlignCommand("justifyCenter", "center");
+    registerAlignCommand("justifyRight", "right");
+    registerAlignCommand("justifyFull", "justify");
+
+    joditInstance.events.on(
+      "beforeCommand",
+      (
+        command: unknown,
+        showUI?: unknown,
+        value?: unknown,
+        ...args: unknown[]
+      ) => {
+        if (typeof command !== "string") return;
+
+        const cmd = command.toLowerCase();
+        const isAlign = ALIGN_COMMANDS.has(cmd) || cmd.startsWith("justify");
+        if (!isAlign) return;
+
+        // 也請在此處進行快照（工具列點擊時間因瀏覽器/版本而異）。
+        saveSelectionSnapshot();
+
+        // 在某些建置/按鈕中，觸發的事件名稱是控制項名稱
+        // （例如 `center`），因此 `afterCommand` 可能無法可靠地觸發。
+        // 在下一個 tick 時同步，以防止 Svelte 使用過時的 `value` 覆蓋編輯器。
+        setTimeout(() => {
+          syncValueFromEditor(`postTick:${cmd}`);
+        }, 0);
+      }
+    );
+
     // 監聽內容變化，回寫到 value（支援 bind:value）
     joditInstance.events.on("change", (newValue: string) => {
-      if (debugHoldSync) return;
       value = newValue;
     });
   });
@@ -514,5 +780,12 @@
   :global(.jodit-container .jodit-wysiwyg) {
     color: #0c0e1f;
     background-color: #ffffff;
+  }
+
+  :global(.jodit-color-picker__groups) {
+    display: flex;
+  }
+  :global(.jodit-color-picker__color-item_active_true) {
+    border-color: #f5f5f6;
   }
 </style>

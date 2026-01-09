@@ -43,10 +43,7 @@
       "table",
       // "source",
     ],
-    // 顏色 palette：跟 TinyMCE demo 對齊
     colors: ["#FFFFFF", "#0C0E1F", "#494A57", "#5E5F6B", "#0093C1", "#00A59B"],
-
-    // 移除 brush 下拉中的「瀏覽器小調色盤」(input[type=color])，只保留上面的 6 色
     showBrowserColorPicker: false,
   };
 
@@ -61,7 +58,8 @@
     );
 
     if (debugNormalize) {
-      const aligns = normalized.match(/\btext-align-(left|center|right)\b/g) ?? [];
+      const aligns =
+        normalized.match(/\btext-align-(left|center|right)\b/g) ?? [];
       console.groupCollapsed("[Normalize] dumpContent");
       console.log("before:", content);
       console.log("after:", normalized);
@@ -109,12 +107,7 @@
     class:lang-en={scriptGroup === "en"}
     lang={scriptGroup === "zh" ? "zh-TW" : "en-US"}
   >
-    <JoditEditor
-      bind:value={content}
-      config={joditConfig}
-      debugLogStyleApply={false}
-      debugHoldSync={false}
-    />
+    <JoditEditor bind:value={content} config={joditConfig} />
   </div>
 
   <div

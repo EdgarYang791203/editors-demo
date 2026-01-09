@@ -215,3 +215,21 @@
   border-collapse: collapse;
   width: 100%;
 }
+
+.editor-content .td-default {
+  border: 1px solid #dadada;
+  min-width: 2em;
+  padding: 0.4em;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  vertical-align: middle;
+}
+
+/* Jodit: color picker swatches horizontal */
+.jodit-color-picker__group {
+  flex-wrap: nowrap;
+  max-width: none;
+  overflow-x: auto;
+}
