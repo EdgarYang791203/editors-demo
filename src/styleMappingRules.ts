@@ -11,11 +11,31 @@ type MapOptions = {
   stripAllStylesByDefault?: boolean;
 };
 
+type NumericParseResult = { value: number; unit: "%" | "px" };
+
 export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
   {
     tag: "A",
     addClasses: ["link-primary"],
     stripAllStyles: true,
+  },
+  {
+    tag: ["TH", "TD"],
+    match: [{ prop: "vertical-align", value: /^top\b/i }],
+    addClasses: ["vertical-align-top"],
+    stripMatchedProps: true,
+  },
+  {
+    tag: ["TH", "TD"],
+    match: [{ prop: "vertical-align", value: /^middle\b/i }],
+    addClasses: ["vertical-align-middle"],
+    stripMatchedProps: true,
+  },
+  {
+    tag: ["TH", "TD"],
+    match: [{ prop: "vertical-align", value: /^bottom\b/i }],
+    addClasses: ["vertical-align-bottom"],
+    stripMatchedProps: true,
   },
   {
     match: [{ prop: "text-align", value: /^left\b/i }],
@@ -133,6 +153,16 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
     match: [
       {
         prop: "background-color",
+        value: /#eef0f0|rgb\(\s*238\s*,\s*240\s*,\s*240\s*\)/i,
+      }
+    ],
+    addClasses: ["bg-back-light-gray"],
+    stripMatchedProps: true,
+  },
+  {
+    match: [
+      {
+        prop: "background-color",
         value: /#5e5f6b|rgb\(\s*94\s*,\s*95\s*,\s*107\s*\)/i,
       },
     ],
@@ -164,6 +194,10 @@ export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
     addClasses: ["table-default"],
   },
   {
+    tag: "TH",
+    addClasses: ["th-default"],
+  },
+  {
     tag: "TD",
     addClasses: ["td-default"],
   },
@@ -181,6 +215,27 @@ function parseStyle(styleText: string): Record<string, string> {
     }
   });
   return map;
+}
+
+function parseNumericCssValue(raw: string): NumericParseResult | null {
+  const value = raw.trim().toLowerCase();
+  // Note: do NOT use \b after '%', because '%' is not a word char.
+  const m = value.match(/^(-?\d+(?:\.\d+)?)(%|px)(?:\s|$)/);
+  if (!m) return null;
+  const num = Number(m[1]);
+  if (!Number.isFinite(num)) return null;
+  const unit = m[2] === "%" ? "%" : "px";
+  return { value: num, unit };
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+function addClassOnce(classList: string[], className: string) {
+  if (!className) return;
+  if (classList.includes(className)) return;
+  classList.push(className);
 }
 
 function serializeStyle(styleMap: Record<string, string>): string {
@@ -231,6 +286,21 @@ export function mapInlineStylesToClasses(
     let classList = (el.getAttribute("class") ?? "")
       .split(/\s+/)
       .filter(Boolean);
+
+    // Dynamic mapping for editor-generated sizing.
+    // Goal: preserve column widths / row heights without keeping inline styles.
+    const normalizedTag = normalizeTagName(tagName);
+
+    // <col style="width: 33.33%"> -> class col-w-pct-33
+    if (normalizedTag === "COL") {
+      const widthRaw = styleMap["width"];
+      const parsed = widthRaw ? parseNumericCssValue(widthRaw) : null;
+      if (parsed && parsed.unit === "%") {
+        const pct = clamp(Math.round(parsed.value), 1, 100);
+        addClassOnce(classList, `col-w-pct-${pct}`);
+        delete styleMap["width"];
+      }
+    }
 
     let shouldStripAllStyles =
       options.stripAllStylesByDefault === true ? true : false;

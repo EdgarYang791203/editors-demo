@@ -16,8 +16,10 @@
 
   let textareaElem: HTMLTextAreaElement | null = null;
   let editorId = "tiny-demo";
-  let codeContentElem: HTMLElementTagNameMap["code"] | null = null;
-  let contentElem: HTMLElement | null = null;
+  let rawCodeElem: HTMLElementTagNameMap["code"] | null = null;
+  let normalizedCodeElem: HTMLElementTagNameMap["code"] | null = null;
+  let rawContentElem: HTMLElement | null = null;
+  let normalizedContentElem: HTMLElement | null = null;
 
   // 給 editor / 預覽用的字體
   let preferredFontStack = "";
@@ -28,7 +30,8 @@
   let chineseStack = "";
   let englishStack = "";
   let editorFont = "";
-  let previewFont = "";
+  let rawPreviewFont = "";
+  let normalizedPreviewFont = "";
 
   let editorInstance: any = null;
 
@@ -42,10 +45,14 @@
       }
     }
 
-    // 預覽區容器的 font-family
-    if (contentElem instanceof Element) {
-      const cs = getComputedStyle(contentElem);
-      previewFont = cs.fontFamily;
+    // 預覽區容器的 font-family（raw / normalized 各自一份）
+    if (rawContentElem instanceof Element) {
+      const cs = getComputedStyle(rawContentElem);
+      rawPreviewFont = cs.fontFamily;
+    }
+    if (normalizedContentElem instanceof Element) {
+      const cs = getComputedStyle(normalizedContentElem);
+      normalizedPreviewFont = cs.fontFamily;
     }
   }
 
@@ -72,10 +79,32 @@
     tinymce.addI18n("en_US", { Formats: stylesToolbarLabel });
     tinymce.addI18n("zh_TW", { Formats: stylesToolbarLabel });
 
+    const pickLocalImageAsDataUrl = (cb: any) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          if (typeof dataUrl === "string") {
+            cb(dataUrl, { title: file.name });
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+
+      input.click();
+    };
+
     tinymce.init({
       target: textareaElem,
       menubar: false,
-      body_class: "editor-content",
+      body_class: "editor-content editor-iframe",
       content_css: [globalEditorCssUrl],
       content_style: `
         body {
@@ -87,6 +116,9 @@
       formats: {
         customD1: { block: "div", attributes: { class: "custom-d1" } },
         customD2: { block: "div", attributes: { class: "custom-d2" } },
+
+        // 圖片 + 文字同列（不覆蓋既有 class，改用 selector + classes）
+        imgTextInline: { selector: "p", classes: "img-text-inline" },
 
         headingH1: { block: "h1", attributes: { class: "heading-h1" } },
         headingH2: { block: "h2", attributes: { class: "heading-h2" } },
@@ -111,6 +143,10 @@
         description: { block: "p", attributes: { class: "description" } },
       },
       style_formats: [
+        {
+          title: "圖文同列(置中)",
+          format: "imgTextInline",
+        },
         {
           title: "醒目 D1",
           format: "customD1",
@@ -184,6 +220,7 @@
         "code",
         "codesample",
         "emoticons",
+        "image",
         "link",
         "lists",
         "media",
@@ -199,9 +236,16 @@
         // "bold italic underline strikethrough",
         "alignleft aligncenter alignright",
         // "bullist numlist",
-        "link unlink table",
+        "link unlink image table",
         // "code",
       ].join(" | "),
+      file_picker_types: "image",
+      paste_data_images: true,
+      automatic_uploads: false,
+      file_picker_callback: (cb: any, _value: any, meta: any) => {
+        if (meta?.filetype !== "image") return;
+        pickLocalImageAsDataUrl(cb);
+      },
       color_map: [
         "#FFFFFF",
         "Back White",
@@ -215,6 +259,8 @@
         "Primary Link",
         "#00A59B",
         "Address",
+        "#eef0f0",
+        "Back Light Gray",
       ],
       color_cols: 4,
       custom_colors: false,
@@ -233,20 +279,29 @@
     });
   });
 
-  let lastHtml = "";
+  let lastRawHtml = "";
+  let lastNormalizedHtml = "";
 
-  async function copyHtml() {
+  async function copyText(text: string) {
     try {
-      await navigator.clipboard.writeText(lastHtml);
+      await navigator.clipboard.writeText(text);
     } catch (e) {
       // fallback：有些環境 clipboard 會擋
       const ta = document.createElement("textarea");
-      ta.value = lastHtml;
+      ta.value = text;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
     }
+  }
+
+  async function copyRawHtml() {
+    await copyText(lastRawHtml);
+  }
+
+  async function copyNormalizedHtml() {
+    await copyText(lastNormalizedHtml);
   }
 
   function getContent2() {
@@ -260,14 +315,22 @@
         { stripAllStylesByDefault: true }
       );
 
-      // 預覽區：用 normalized
-      if (contentElem) contentElem.innerHTML = normalized;
+      // 預覽區：raw / normalized 都顯示，方便比對「少了什麼」
+      if (rawContentElem) rawContentElem.innerHTML = content;
+      if (normalizedContentElem) normalizedContentElem.innerHTML = normalized;
 
-      // 文字區：顯示 pretty 的版本
-      const pretty = prettyPrintHtml(normalized);
-      lastHtml = pretty;
+      // code 區：各自 pretty print
+      const prettyRaw = prettyPrintHtml(content);
+      const prettyNormalized = prettyPrintHtml(normalized);
 
-      if (codeContentElem) codeContentElem.textContent = pretty;
+      lastRawHtml = prettyRaw;
+      lastNormalizedHtml = prettyNormalized;
+
+      if (rawCodeElem) rawCodeElem.textContent = prettyRaw;
+      if (normalizedCodeElem) normalizedCodeElem.textContent = prettyNormalized;
+
+      // 預覽渲染後再抓一次 font debug
+      setTimeout(updateFontDebug, 0);
     } else {
       console.error("tinymce or activeEditor not available");
     }
@@ -289,23 +352,38 @@
     </button>
   </div>
   <textarea bind:this={textareaElem} id={editorId}>
-    Welcome to TinyMCE!
   </textarea>
 
+  <h3 style="margin: 1rem 0 0.5rem">Raw Output（含 inline style）</h3>
   <div
-    bind:this={contentElem}
+    bind:this={rawContentElem}
     class="html-output editor-content"
     class:lang-zh={scriptGroup === "zh"}
     class:lang-en={scriptGroup === "en"}
     lang={scriptGroup === "zh" ? "zh-TW" : "en-US"}
   ></div>
-
   <div class="code-block">
     <div class="code-toolbar">
-      <span class="code-title">HTML Output</span>
-      <button class="code-btn" on:click={copyHtml}>Copy</button>
+      <span class="code-title">Raw HTML</span>
+      <button class="code-btn" on:click={copyRawHtml}>Copy</button>
     </div>
-    <pre><code bind:this={codeContentElem}></code></pre>
+    <pre><code bind:this={rawCodeElem}></code></pre>
+  </div>
+
+  <h3 style="margin: 1.25rem 0 0.5rem">Normalized Output（inline style → class）</h3>
+  <div
+    bind:this={normalizedContentElem}
+    class="html-output editor-content"
+    class:lang-zh={scriptGroup === "zh"}
+    class:lang-en={scriptGroup === "en"}
+    lang={scriptGroup === "zh" ? "zh-TW" : "en-US"}
+  ></div>
+  <div class="code-block">
+    <div class="code-toolbar">
+      <span class="code-title">Normalized HTML</span>
+      <button class="code-btn" on:click={copyNormalizedHtml}>Copy</button>
+    </div>
+    <pre><code bind:this={normalizedCodeElem}></code></pre>
   </div>
 
   <!-- 🔍 Debug 面板：demo 給客戶看的重點 -->
@@ -321,7 +399,8 @@
     <p>Chinese Stack: <code>{chineseStack}</code></p>
     <p>English Stack: <code>{englishStack}</code></p>
     <p>Editor body font-family: <code>{editorFont}</code></p>
-    <p>Preview container font-family: <code>{previewFont}</code></p>
+    <p>Raw preview font-family: <code>{rawPreviewFont}</code></p>
+    <p>Normalized preview font-family: <code>{normalizedPreviewFont}</code></p>
     <button on:click={updateFontDebug}>重新檢查字體</button>
   </div>
 </section>
