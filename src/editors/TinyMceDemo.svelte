@@ -74,7 +74,7 @@
 
     // ✅ 改 styles 下拉在「尚未選擇樣式」時的預設字樣（TinyMCE 預設會顯示 Formats）
     // 這是透過覆寫 i18n key 來做（key 就是原始英文字串 "Formats"）
-    const stylesToolbarLabel = scriptGroup === "zh" ? "選擇樣式" : "Styles";
+    const stylesToolbarLabel = "選擇樣式";
     tinymce.addI18n("en", { Formats: stylesToolbarLabel });
     tinymce.addI18n("en_US", { Formats: stylesToolbarLabel });
     tinymce.addI18n("zh_TW", { Formats: stylesToolbarLabel });
@@ -103,6 +103,7 @@
 
     tinymce.init({
       target: textareaElem,
+      language: "zh-TW",
       menubar: false,
       body_class: "editor-content editor-iframe",
       content_css: [globalEditorCssUrl],
@@ -269,7 +270,7 @@
         // 每次內容變更時更新 debug 資訊
 
         editor.on("init", () => {
-          const lang = scriptGroup === "zh" ? "zh-TW" : "en-US";
+          const lang = "zh-TW";
           editor.getBody().setAttribute("lang", lang);
 
           // init 完、iframe body 存在後再讀一次實際字體

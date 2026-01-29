@@ -21,6 +21,12 @@
 }
 
 /* Image + text side-by-side with vertical centering */
+.editor-content img,
+.img-default {
+  max-width: 100%;
+  height: auto;
+}
+
 .editor-content p.img-text-inline {
   display: flex;
   align-items: center;

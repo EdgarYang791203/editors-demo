@@ -15,6 +15,10 @@ type NumericParseResult = { value: number; unit: "%" | "px" };
 
 export const DEFAULT_STYLE_MAPPING_RULES: StyleMappingRule[] = [
   {
+    tag: "IMG",
+    addClasses: ["img-default"],
+  },
+  {
     tag: "A",
     addClasses: ["link-primary"],
     stripAllStyles: true,
